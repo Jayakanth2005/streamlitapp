@@ -1,5 +1,4 @@
 import streamlit as st
-import cv2
 import numpy as np
 import PyPDF2
 import tempfile
@@ -39,39 +38,6 @@ def text_to_audio(text):
     temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
     tts.save(temp_audio_file.name)
     return temp_audio_file.name
-
-# Convert PDF text to an animated scrolling video using OpenCV
-def text_to_animated_video(text):
-    temp_video_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    width, height = 1280, 720
-    fps = 30
-    duration = 10  # Animation duration in seconds
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(temp_video_file.name, fourcc, fps, (width, height))
-
-    # Use default font if system font is unavailable
-    try:
-        font_path = r"C:\Windows\Fonts\Arial.ttf"  # Windows default Arial font
-        font = ImageFont.truetype(font_path, 40)
-    except IOError:
-        font = ImageFont.load_default()  # Use PIL's default font if Arial is missing
-
-    # Create a scrolling text: we split the first 100 words into lines of 10 words each
-    words = text.split()
-    lines = [" ".join(words[i:i+10]) for i in range(0, min(len(words), 100), 10)]
-    full_text = "\n".join(lines)
-
-    for i in range(fps * duration):
-        img = Image.new("RGB", (width, height), (0, 0, 0))  # Black background
-        draw = ImageDraw.Draw(img)
-        # Compute vertical position: start at bottom and scroll upward
-        y_position = height - int(i * (height / (fps * duration)))
-        draw.text((50, y_position), full_text, font=font, fill="white")
-        frame = np.array(img)
-        out.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
-
-    out.release()
-    return temp_video_file.name
 
 # Summarize PDF text using a recursive (chunk-based) approach so that the final summary spans 4–5 pages
 def summarize_text(text):
@@ -133,12 +99,6 @@ if uploaded_file:
     st.download_button("Download Audio", data=open(audio_file_path, "rb"), file_name="pdf_audio.mp3", mime="audio/mp3")
 
     # Generate an animated scrolling video from the PDF text
-    video_file_path = text_to_animated_video(pdf_text)
-    if video_file_path:
-        st.video(video_file_path)
-        st.download_button("Download Animated Video", data=open(video_file_path, "rb"), file_name="animated_pdf_video.mp4", mime="video/mp4")
-    else:
-        st.error("Error generating video. Check OpenCV installation!")
 
     # -----------------------------
     # Set up the Chatbot Feature
